@@ -67,6 +67,7 @@ An example utility method will be provided in the documentation.  By advocating 
 - Users who currently implement `store.pushPayload` or `serializer.pushPayload` will have to migrate their codebases
   to use `store.push`.
 - A variety of use cases may not be currently covered by `ember-data` with a functional/composable pattern including singularizing, dasherizing and camelizing types.  However, future versions of `ember-data` will likely eliminate the need to singularize or dasherize types.
+- More lines of code
 
 ## Alternatives
 
