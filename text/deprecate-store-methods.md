@@ -1,5 +1,5 @@
 - Start Date: 2019-09-28
-- Relevant Team(s): Ember Data
+- Relevant Team(s): EmberData
 - RFC PR:
 - Tracking:
 
@@ -13,13 +13,13 @@ Deprecate `store.pushPayload` and `store.normalize`.
 
 The EmberData team is working to encapsulate features specific to `Network` separate from the `Store` (and other concerns such as `Presentation` and `Caching`).  This encapsulation allows for improved modularity and future improvements of the APIs within `Network`.
 
-The `store.pushPayload` and `store.normalize` methods force the `store` to be aware of the specifics of serializers and normalization, breaking the desired pattern of modularity and encapsulated concerns.
+The `store.pushPayload` and `store.normalize` methods force the `Store` to be aware of the specifics of serializers and normalization, breaking the desired pattern of modularity and encapsulated concerns.
 
-These methods are both redundant (as 1:1 patterns for using public APIs exist for achieving the same behavior) and a common source of confusion and errors due to obscuring the format used by the cache and the indirection of the APIs they involve.
+These methods are redundant as 1:1 patterns for using public APIs exist for achieving the same behavior. Moreover, they are a common source of confusion and errors due to obscuring the format used by the cache and the indirection of the APIs they involve.
 
 In addition to better respecting separation of concerns, the public API alternatives to these APIs avoid introducing many of the bugs and confusion these APIs have by keeping responsibilities clear and preserving context.
 
-## Normalization
+### Normalization
 
 **deprecate `store.normalize`**
 
@@ -29,30 +29,28 @@ It's implementation is approximately implemented as follows.
 
 ```js
 function normalize(modelName, rawPayload) {
+  const ModelClass = this.modelFor(modelName);
   const serializer = this.serializerFor(modelName);
-  const model = this.modelFor(modelName);
-  return serializer.normalize(model, rawPayload);
+  return serializer.normalize(ModelClass, rawPayload);
 }
 ```
 
-The first issue with this method is it requires knowledge of `Network` and `Presentation` concerns breaking encapsulation and modularity. // TODO bugs and maintenance
+As noted, this method requires knowledge of `Network` and `Presentation` concerns, breaking encapsulation and modularity the EmberData team is trying to acheive.
 
 **Alternatives**
 
 The same functionality provided by `store.normalize` can be impelemented a few ways.
 
 - `store.serializerFor(...).normalizeResponse(...)`
-// TODO
 - functional normalization
-// TODO
 
 ### Pushing Data
 
 **deprecate `store.pushPayload()`**
 
-`store.pushPayload` can be used to normalize a `json-api` or non `json-api` compliant response and subsequently pushing the data into the store.
+`store.pushPayload` is be used to normalize a `json-api` or non `json-api` compliant payload to be pushed into the store.
 
-Here is what `EmberData` approximately uses to deserialize data and update the `Cache`.
+Here is what EmberData approximately uses to deserialize data and update the `Cache`.
 
 ```js
 function pushPayload(store, modelName, rawPayload) {
@@ -64,17 +62,19 @@ function pushPayload(store, modelName, rawPayload) {
 }
 ```
 
-Similar to `store.normalize`, this necessarily requires a serializer with a `normalizeResponse` hook where your intimate knowledge of the undocumented format will be converted into a compliant format.  It should be said that there is no scenario where `EmberData` can infer how to deserialize your data.
-
-Effectively, `EmberData` is providing an abstraction that leads to a few problems.
-
-1. As noted above, the `Store` should be unaware of `Network` concerns as `EmberData` moves to modernize it's codebase.  Having clear and directional responsibilities for managing your data is preferred to stitching together obligations of various components of `EmberData`.
-2. Although abstractions provide ease of use, they also can reduce understandability on the part of the user.  Public APIs already exist to acheive the same level of functionality.
-3. More framework code necessarily increases the amount of bugs.  Simplifying and continuing work to reorganize and modularize the `EmberData` codebase will help reduce future bugs.
-
 **Alternatives**
 
 - normalization followed by `store.push`
+
+## Problems
+
+`store.normalize` && `store.pushPayload` necessarily requires a serializer where your intimate knowledge of the undocumented format will be converted into a compliant format.  It should be said that there is no scenario where EmberData can infer how to deserialize your data.
+
+Effectively, EmberData is providing an abstraction that leads to a few problems.
+
+1. As noted above, the `Store` should be unaware of `Network` concerns as EmberData moves to modernize it's codebase.  Having clear and directional responsibilities for managing your data is preferred to stitching together obligations of various components of EmberData.
+2. Although abstractions provide ease of use, they also can reduce understandability on the part of the user.  Public APIs already exist to acheive the same level of functionality.
+3. More framework code necessarily increases the amount of bugs.  Simplifying and continuing work to reorganize and modularize the EmberData codebase will help reduce future bugs.
 
 ### Implementation
 
@@ -88,12 +88,12 @@ An example utility method using existing public APIs will be provided in the doc
 
 ## Drawbacks
 
-- Users who currently implement `store.pushPayload` and `store.normalize` will have to migrate their codebases
-  to use `store.push`.
-- A variety of use cases may not be currently covered by `EmberData` with a functional/composable pattern including singularizing, dasherizing and camelizing types.  However, future versions of `EmberData` will likely eliminate the need to singularize or dasherize types.
-- More lines of code
+- Users who currently implement `store.pushPayload` and `store.normalize` will have to implement the provided recommended approach.
+- A variety of use cases may not be currently covered by EmberData with a functional/composable pattern including singularizing, dasherizing and camelizing types.  However, future versions of EmberData will likely eliminate the need to singularize or dasherize types.
 
 ## Alternatives
+
+We could keep existing methods and forgo encapsulation efforts.
 
 ## Unresolved questions
 
